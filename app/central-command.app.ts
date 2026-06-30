@@ -241,21 +241,38 @@ function tickfx(){
    ANALIZADOR DE VACANTES
    ============================================================ */
 (function JOB(){
-  const STRONG={'react':'React','redux':'Redux','javascript':'JavaScript','es6':'ES6+','vue':'Vue.js','node':'Node.js','aws':'AWS','cloudfront':'CloudFront','lambda':'Lambda','django':'Django','rest':'REST APIs','git':'Git','scrum':'SCRUM','postgres':'PostgreSQL','postgresql':'PostgreSQL','html':'HTML','css':'CSS','php':'PHP','lighthouse':'Lighthouse','drf':'DRF'};
-  const GAP={'typescript':'TypeScript','next.js':'Next.js','nextjs':'Next.js','zustand':'Zustand','tanstack':'TanStack Query','react query':'TanStack Query','tailwind':'Tailwind','docker':'Docker','graphql':'GraphQL','kubernetes':'Kubernetes','jest':'Jest','vitest':'Vitest','playwright':'Playwright','cypress':'Cypress','angular':'Angular','svelte':'Svelte'};
+  // ---- perfil del usuario (editable, reemplaza las listas fijas) ----
+  const PKEY='job-profile';
+  function loadProfile(){try{return JSON.parse(localStorage.getItem(PKEY))||{skills:'',gaps:'',english:''};}catch(e){return {skills:'',gaps:'',english:''};}}
+  function saveProfile(){
+    const p={skills:$('job-profile-skills').value,gaps:$('job-profile-gaps').value,english:$('job-profile-english').value};
+    localStorage.setItem(PKEY,JSON.stringify(p));
+    const el=$('job-profile-saved');el.style.display='inline';clearTimeout(el._t);el._t=setTimeout(()=>el.style.display='none',1800);
+  }
+  function toDict(csv){const o={};(csv||'').split(',').map(s=>s.trim()).filter(Boolean).forEach(s=>{o[s.toLowerCase()]=s;});return o;}
+  (function initProfile(){
+    const p=loadProfile();
+    $('job-profile-skills').value=p.skills||'';$('job-profile-gaps').value=p.gaps||'';$('job-profile-english').value=p.english||'';
+  })();
+  $('job-profile-save').onclick=()=>{saveProfile();toast('Perfil guardado','#34D399');};
+
   $('job-analyze').onclick=()=>{
     const raw=$('job-jd').value;if(!raw.trim()){alert('Pega primero la descripción de la vacante.');return;}
+    const p=loadProfile();
+    const STRONG=toDict(p.skills),GAP=toDict(p.gaps);
+    if(!Object.keys(STRONG).length&&!Object.keys(GAP).length){alert('Primero llena tu perfil arriba (tus skills y tus brechas) para poder comparar.');return;}
     const t=' '+raw.toLowerCase()+' ';
     const matched={};for(const[k,l]of Object.entries(STRONG))if(t.includes(k))matched[l]=true;
     const gapsReq={};for(const[k,l]of Object.entries(GAP))if(t.includes(k))gapsReq[l]=true;
     const matchList=Object.keys(matched),gapList=Object.keys(gapsReq);
     const engHigh=/(advanced english|fluent english|english\s*(b2|c1|c2)|inglés\s*(avanzado|b2|c1|c2)|english required|proficient in english|excellent communication)/i.test(raw);
     const engMention=/english|inglés/i.test(raw);
+    const profEnglishOk=/avanzado|b2|c1|c2|fluent|advanced/i.test(p.english||'');
     const remote=/(remote|remoto|work from home|home office|distributed)/i.test(raw);
     const usd=/(usd|\$\s*\d|dollars|us dollar)/i.test(raw);
     const senior=/(senior|lead|staff|principal)/i.test(raw),junior=/(junior|jr\.|entry level|trainee)/i.test(raw);
     const totalReq=(matchList.length+gapList.length)||1;
-    let base=Math.round(100*matchList.length/totalReq);if(engHigh)base-=12;if(senior)base-=6;base=Math.max(8,Math.min(98,base));
+    let base=Math.round(100*matchList.length/totalReq);if(engHigh&&!profEnglishOk)base-=12;if(senior)base-=6;base=Math.max(8,Math.min(98,base));
     const col=base>=70?'#34D399':base>=45?'#FBBF24':'#F87171';
     $('job-ring').innerHTML=`<svg width="100" height="100" viewBox="0 0 104 104"><circle cx="52" cy="52" r="44" fill="none" stroke="#322A5C" stroke-width="9"/><circle cx="52" cy="52" r="44" fill="none" stroke="${col}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${2*Math.PI*44}" stroke-dashoffset="${2*Math.PI*44*(1-base/100)}" transform="rotate(-90 52 52)"/></svg><div class="pct" style="color:${col}">${base}%</div>`;
     let v,vd;
@@ -265,7 +282,7 @@ function tickfx(){
     $('job-verdict').textContent=v;$('job-verdictD').textContent=vd;
     const flags=[];flags.push(remote?{c:'good',t:'Remoto'}:{c:'warn',t:'No menciona remoto'});
     if(usd)flags.push({c:'good',t:'USD / dólares'});
-    if(engHigh)flags.push({c:'bad',t:'Inglés avanzado (tu blocker)'});else if(engMention)flags.push({c:'warn',t:'Menciona inglés'});
+    if(engHigh&&!profEnglishOk)flags.push({c:'bad',t:'Inglés avanzado (tu blocker)'});else if(engHigh)flags.push({c:'good',t:'Inglés avanzado — tú cumples'});else if(engMention)flags.push({c:'warn',t:'Menciona inglés'});
     if(senior)flags.push({c:'warn',t:'Senior/Lead'});if(junior)flags.push({c:'good',t:'Junior-friendly'});
     $('job-flags').innerHTML=flags.map(f=>`<span class="flag ${f.c}">${f.t}</span>`).join('');
     $('job-matches').innerHTML=matchList.length?matchList.map(m=>`<span class="pill match dot">${m}</span>`).join(''):'<span class="empty-skills">No detecté tus skills fuertes en el texto. Revisa que pegaste los requisitos.</span>';
@@ -517,6 +534,47 @@ function tickfx(){
   $('port-export').onclick=()=>downloadJSON(S,'portfolio-backup.json');
   $('port-import').onclick=()=>$('port-file').click();
   $('port-file').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{S=JSON.parse(r.result);save();render();}catch(err){alert('Archivo inválido');}};r.readAsText(f);};
+  render();
+})();
+
+/* ============================================================
+   SALUD MENTAL
+   ============================================================ */
+(function SALUD(){
+  const KEY='salud-checklist-v1';
+  const ITEMS=[
+    {id:'doctor',icon:'🩺',name:'Ir al doctor'},
+    {id:'psicologa',icon:'🧠',name:'Ir a la psicóloga'},
+    {id:'meditar',icon:'🧘',name:'Meditar'},
+    {id:'ejercicio',icon:'🏃',name:'Ejercicio'},
+    {id:'banarme',icon:'🚿',name:'Bañarme'},
+  ];
+  const todayStr=()=>new Date().toISOString().slice(0,10);
+  const fresh=()=>({done:{},lastDay:todayStr(),streak:0,lastStreakDay:null});
+  let S=load();
+  function load(){try{const r=JSON.parse(localStorage.getItem(KEY));return r&&r.done?r:fresh();}catch(e){return fresh();}}
+  function save(){localStorage.setItem(KEY,JSON.stringify(S));}
+  if(S.lastDay!==todayStr()){S.done={};S.lastDay=todayStr();save();}
+
+  function allDoneToday(){return ITEMS.every(i=>S.done[i.id]);}
+  function toggle(it){
+    S.done[it.id]=!S.done[it.id];
+    const t=todayStr();
+    if(allDoneToday()){
+      if(S.lastStreakDay!==t){const y=new Date(Date.now()-864e5).toISOString().slice(0,10);S.streak=(S.lastStreakDay===y)?S.streak+1:1;S.lastStreakDay=t;}
+      fireworks();toast('¡Día completo de cuidado personal!','#34D399');
+    }
+    save();render();
+  }
+  function render(){
+    $('salud-count').textContent=ITEMS.filter(i=>S.done[i.id]).length+'/'+ITEMS.length;
+    $('salud-streak').textContent=(S.streak||0)+'🔥';
+    const lc=$('salud-list');lc.innerHTML='';
+    ITEMS.forEach(it=>{const done=!!S.done[it.id];const el=document.createElement('div');el.className='mission'+(done?' done':'');
+      el.innerHTML=`<div class="mcheck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0E0B1A" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></div><div class="micon">${it.icon}</div><div class="minfo"><div class="name">${it.name}</div></div>`;
+      el.onclick=()=>toggle(it);lc.appendChild(el);});
+  }
+  $('salud-resetDay').onclick=()=>{if(confirm('¿Reiniciar el checklist de hoy? (No borra tu racha)')){S.done={};save();render();}};
   render();
 })();
 }
