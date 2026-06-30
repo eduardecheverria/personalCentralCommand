@@ -17,6 +17,7 @@ export const MARKUP = `<canvas id="fx"></canvas>
       <button class="tab"        data-target="p-ctx"  data-accent="blue"><span class="ic">🔒</span> Contextos</button>
       <button class="tab"        data-target="p-job"  data-accent="teal"><span class="ic">🎯</span> Vacantes</button>
       <button class="tab"        data-target="p-port" data-accent="magenta"><span class="ic">📁</span> Portafolio</button>
+      <button class="tab"        data-target="p-salud" data-accent="green"><span class="ic">💚</span> Salud mental</button>
     </div>
   </div>
 </div>
@@ -157,6 +158,17 @@ export const MARKUP = `<canvas id="fx"></canvas>
       <p>Pega una descripción y cruza tu perfil: qué cubres, qué falta, inglés y modalidad.</p>
     </div>
     <div id="job-avg"></div>
+
+    <div class="newproj" id="job-profile-card" style="margin-bottom:18px">
+      <h2 style="margin-top:0">Tu perfil <span class="tag">se guarda solo</span></h2>
+      <p style="margin:0 0 10px;color:#9C95C2;font-size:13px">Llénalo una vez. Cada vacante que analices se compara contra esto.</p>
+      <div class="crow"><textarea id="job-profile-skills" placeholder="Skills que ya dominas, separadas por coma (ej. React, JavaScript, Node.js, Git, HTML, CSS)" style="min-height:60px"></textarea></div>
+      <div class="crow"><textarea id="job-profile-gaps" placeholder="Skills que NO dominas pero ves seguido en vacantes, separadas por coma (ej. TypeScript, Docker, GraphQL)" style="min-height:60px"></textarea></div>
+      <div class="crow"><input id="job-profile-english" placeholder="Tu nivel de inglés (ej. B1, intermedio, avanzado)"></div>
+      <button class="app-btn" id="job-profile-save">Guardar perfil</button>
+      <span id="job-profile-saved" style="margin-left:10px;color:#34D399;font-size:13px;display:none">Guardado ✓</span>
+    </div>
+
     <input id="job-name" placeholder="Nombre de la vacante (empresa · puesto)" style="margin-bottom:10px">
     <textarea id="job-jd" placeholder="Pega aquí la descripción completa de la vacante…"></textarea>
     <button class="go" id="job-analyze">Analizar</button>
@@ -199,6 +211,24 @@ export const MARKUP = `<canvas id="fx"></canvas>
       <input type="file" id="port-file" accept="application/json" class="file-hidden">
     </div>
     <div class="ftxt">portfolio-projects · datos locales</div>
+  </section>
+
+  <!-- ================= SALUD MENTAL ================= -->
+  <section class="panel" id="p-salud">
+    <div class="phead">
+      <div class="eyebrow" style="color:var(--green)">Cuidado personal</div>
+      <h1>Salud mental</h1>
+      <p>Lo mínimo para estar bien. Se reinicia cada día.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="k">Hoy</div><div class="v green" id="salud-count">0/5</div></div>
+      <div class="stat"><div class="k">Racha</div><div class="v gold" id="salud-streak">0🔥</div></div>
+    </div>
+    <div class="missions" id="salud-list"></div>
+    <div class="toolbar">
+      <button class="app-btn" id="salud-resetDay">Reiniciar día</button>
+    </div>
+    <div class="ftxt">salud-checklist-v1 · datos locales</div>
   </section>
 
 </div>
