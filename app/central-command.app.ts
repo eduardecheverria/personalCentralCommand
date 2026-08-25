@@ -50,15 +50,13 @@ function tickfx(){
     {id:'ingles',icon:'🌐',name:'Inglés técnico',xp:110,min:'45 min',skill:'ingles',m:true},
     {id:'aplicar',icon:'🎯',name:'Aplicar a vacantes',xp:100,min:'45 min',skill:'busqueda',m:true},
     {id:'portfolio',icon:'🏗️',name:'Portfolio / GitHub',xp:95,min:'60 min',skill:'proyectos'},
-    {id:'codigo',icon:'💻',name:'Entrevista de código',xp:80,min:'45 min',skill:'livecoding'},
     {id:'teorica',icon:'🎤',name:'Entrevista teórica simulada',xp:70,min:'30 min',skill:'comunicacion'},
-    {id:'leetcode',icon:'⚡',name:'HackerRank / LeetCode',xp:60,min:'30 min',skill:'algoritmos'},
-    {id:'teoria',icon:'📚',name:'Teoría + Arquitectura',xp:55,min:'45 min',skill:'fundamentos'},
-    {id:'botas',icon:'👢',name:'Botas Don Lalo',xp:40,min:'30 min',skill:'negocio'},
+    {id:'teoria',icon:'📚',name:'Teoría + Arquitectura',xp:55,min:'10 min',skill:'fundamentos',dayFilter:'B'}
   ];
-  const SKILLS=[['ingles','Inglés'],['busqueda','Búsqueda'],['proyectos','Proyectos'],['livecoding','Live Coding'],['comunicacion','Comunicación'],['algoritmos','Algoritmos'],['fundamentos','Fundamentos'],['negocio','Negocio']];
+  const SKILLS=[['ingles','Inglés'],['busqueda','Búsqueda'],['networking','Networking'],['proyectos','Proyectos'],['livecoding','Live Coding'],['comunicacion','Comunicación'],['fundamentos','Fundamentos'],['negocio','Negocio']];
   const SKILL_STEP=250;
   const todayStr=()=>new Date().toISOString().slice(0,10);
+  const _dn=new Date();const _dayNum=Math.floor(Date.UTC(_dn.getFullYear(),_dn.getMonth(),_dn.getDate())/864e5);const todaySlot=_dayNum%2===0?'A':'B';
   const fresh=()=>({totalXp:0,xpByDay:{},done:{},lastDay:todayStr(),streak:0,lastStreakDay:null,skillXp:{},log:[]});
   let S=load();
   function load(){try{const r=JSON.parse(localStorage.getItem(KEY));return r&&r.skillXp?r:fresh();}catch(e){return fresh();}}
@@ -80,13 +78,15 @@ function tickfx(){
     const t=todayStr(),lv=levelFromXp(S.totalXp);
     $('rpg-level').textContent=lv.lvl;$('rpg-xptoday').textContent=(S.xpByDay[t]||0);
     $('rpg-streak').textContent=(S.streak||0)+'🔥';
-    $('rpg-missions').textContent=MISSIONS.filter(m=>S.done[m.id]).length+'/'+MISSIONS.length;
     $('rpg-lvlnum').textContent=lv.lvl;$('rpg-lvlcur').textContent=lv.cur;$('rpg-lvlneed').textContent=lv.need;
     $('rpg-lvlbar').style.width=(100*lv.cur/lv.need).toFixed(1)+'%';
     const mc=$('rpg-missionList');mc.innerHTML='';
-    MISSIONS.forEach(m=>{const done=!!S.done[m.id];const el=document.createElement('div');el.className='mission'+(done?' done':'');
-      el.innerHTML=`<div class="mcheck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0E0B1A" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></div><div class="micon">${m.icon}</div><div class="minfo"><div class="name">${m.name}${m.m?'<span class="mmin">MÍNIMO</span>':''}</div><div class="meta">${m.min}</div></div><div class="mxp">+${m.xp}</div>`;
-      el.onclick=()=>toggle(m);mc.appendChild(el);});
+    const availToday=MISSIONS.filter(m=>!m.dayFilter||m.dayFilter===todaySlot);
+    $('rpg-missions').textContent=MISSIONS.filter(m=>S.done[m.id]).length+'/'+availToday.length;
+    MISSIONS.forEach(m=>{const done=!!S.done[m.id];const skip=!!(m.dayFilter&&m.dayFilter!==todaySlot);const el=document.createElement('div');el.className='mission'+(done?' done':'')+(skip?' skip':'');
+      if(skip){el.innerHTML=`<div class="mcheck"></div><div class="micon" style="opacity:.4">${m.icon}</div><div class="minfo"><div class="name" style="opacity:.4">${m.name}</div><div class="meta">Mañana toca</div></div><div class="mxp" style="opacity:.25">+${m.xp}</div>`;}
+      else{el.innerHTML=`<div class="mcheck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0E0B1A" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></div><div class="micon">${m.icon}</div><div class="minfo"><div class="name">${m.name}${m.m?'<span class="mmin">MÍNIMO</span>':''}</div><div class="meta">${m.min}</div></div><div class="mxp">+${m.xp}</div>`;el.onclick=()=>toggle(m);}
+      mc.appendChild(el);});
     const sc=$('rpg-skillList');sc.innerHTML='';
     SKILLS.forEach(([id,name])=>{const xp=S.skillXp[id]||0,lvl=Math.floor(xp/SKILL_STEP)+1,into=xp%SKILL_STEP;
       const el=document.createElement('div');el.className='skill';
